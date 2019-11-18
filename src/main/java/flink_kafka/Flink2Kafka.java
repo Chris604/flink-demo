@@ -16,8 +16,8 @@ public class Flink2Kafka {
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         Properties prop = new Properties();
-        prop.setProperty("bootstrap.servers","bj-dcs-005:9092,bj-dcs-006:9092,bj-dcs-007:9092,bj-dcs-008:9092,bj-dcs-017:9092");
-        prop.setProperty("zookeeper.connect","bj-dcs-002:2181,bj-dcs-003:2181,bj-dcs-004:2181");
+        prop.setProperty("bootstrap.servers","");
+        prop.setProperty("zookeeper.connect","");
         prop.setProperty("group.id","flink-test");
 
         prop.setProperty("buffer.memory", "33554432");

@@ -10,6 +10,8 @@ public class JoinSQLExample {
 
     public static void main(String []args) throws Exception {
         ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(2);
+
         BatchTableEnvironment tenv = BatchTableEnvironment.create(env);
 
         DataSet<Student> sdata = env.fromElements(new Student("s001", "zhansan"),

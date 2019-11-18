@@ -17,8 +17,8 @@ public class Kafka2Sql {
 
     public static void main(String []args) throws Exception {
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "bj-dcs-005:9092,bj-dcs-006:9092,bj-dcs-007:9092,bj-dcs-008:9092,bj-dcs-017:9092");
-        properties.setProperty("zookeeper.connect","bj-dcs-002:2181,bj-dcs-003:2181,bj-dcs-004:2181");
+        properties.setProperty("bootstrap.servers", "");
+        properties.setProperty("zookeeper.connect","");
         properties.setProperty("group.id","kafka-sql-1");
 
         FlinkKafkaConsumer09<String> consumer = new FlinkKafkaConsumer09<>("abtest", new SimpleStringSchema(), properties);

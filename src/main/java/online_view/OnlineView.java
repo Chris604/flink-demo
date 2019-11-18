@@ -6,6 +6,7 @@ import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.tuple.Tuple;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -38,8 +39,8 @@ public class OnlineView {
 
         // 配置 kafka，指定 data source
         Properties prop = new Properties();
-        prop.setProperty("bootstrap.servers","host:port");
-        prop.setProperty("zookeeper.connect","host:port");
+        prop.setProperty("bootstrap.servers","");
+        prop.setProperty("zookeeper.connect","");
         prop.setProperty("group.id","online-view");
 
         FlinkKafkaConsumer09<String> consumer = new FlinkKafkaConsumer09<>("abtest", new SimpleStringSchema(), prop);
@@ -55,38 +56,40 @@ public class OnlineView {
 
         SingleOutputStreamOperator<UserStat> aggregate = winStream.aggregate(new MyAggr());
 
-        SingleOutputStreamOperator<String> map = aggregate.map(value -> value.eName + ":" + value.PV);
+//        SingleOutputStreamOperator<String> map = aggregate.map(value -> value.eName + ":" + value.PV);
+        SingleOutputStreamOperator<Tuple2<String, Long>> map = aggregate.map(new MapFunction<UserStat, Tuple2<String, Long>>() {
+            @Override
+            public Tuple2<String, Long> map(UserStat value) throws Exception {
+                return new Tuple2(value.eName, value.PV);
+            }
+        });
 
         map.print();
 
         // sink 到 redis 中去，引入开源redisSink
         FlinkJedisPoolConfig conf = new FlinkJedisPoolConfig
                 .Builder()
-                .setHost("host")
+                .setHost("172.16.11.245")
                 .setPort(6379)
                 .build();
-
-        RedisSink<String> redisSink = new RedisSink<>(conf, new RedisMapper<String>() {
+        RedisSink<Tuple2<String, Long>> redisSink = new RedisSink<>(conf, new RedisMapper<Tuple2<String, Long>>() {
             @Override
             public RedisCommandDescription getCommandDescription() {
-                return new RedisCommandDescription(RedisCommand.SET);
+                return new RedisCommandDescription(RedisCommand.HSET, "flink");
             }
 
             @Override
-            public String getKeyFromData(String value) {
-                System.out.println(value.split(":")[0]);
-                return value.split(":")[0];
+            public String getKeyFromData(Tuple2<String, Long> value) {
+                return value.f0;
             }
 
             @Override
-            public String getValueFromData(String value) {
-                System.out.println(value.split(":")[1]);
-                return value.split(":")[1];
+            public String getValueFromData(Tuple2<String, Long> value) {
+                return value.f1.toString();
             }
         });
 
-
-        map.addSink(redisSink);
+//        map.addSink(redisSink);
 
         env.execute("online-view");
     }
